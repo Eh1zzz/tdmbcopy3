@@ -27,6 +27,7 @@
   const DICT = {
     /* ───────────────────────── ENGLISH (source) ───────────────────────── */
     en: {
+      'hero.playTrailer': 'Play Trailer', 'hero.viewDetails': 'View Details',
       'nav.movies': 'Movies', 'nav.series': 'TV Series', 'nav.searchPh': 'Search movies, shows, people…',
       'profile.defaultName': 'Movie Fan', 'profile.localTmdb': 'Local · TMDB',
       'profile.watchlist': 'Watchlist', 'profile.favourites': 'Favourites',
