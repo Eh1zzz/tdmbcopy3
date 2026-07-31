@@ -125,11 +125,27 @@
       transition:opacity .2s, transform .2s;
     }
     .hero-dot.active { background:var(--accent); opacity:1; transform:scale(1.28); }
+    .hero-arrow {
+      position:absolute; top:50%; transform:translateY(-50%); z-index:2;
+      width:44px; height:44px; border-radius:50%;
+      background:rgba(0,0,0,.45); backdrop-filter:blur(6px);
+      border:1.5px solid rgba(255,255,255,.25); color:#fff;
+      font-size:1.7rem; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity .25s, background .2s, transform .2s, color .2s;
+    }
+    .hero-track:hover .hero-arrow { opacity:1; }
+    .hero-arrow:hover  { background:var(--accent); color:#0a0a0f; border-color:var(--accent); }
+    .hero-arrow:active { transform:translateY(-50%) scale(.92); }
+    .hero-arrow-prev { left:14px; }
+    .hero-arrow-next { right:14px; }
     @media(max-width:600px){
       .hero { padding:0 1rem; margin-top:.75rem; }
       .hero-overview { -webkit-line-clamp:2; font-size:.84rem; }
       .hero-btn { padding:10px 18px; font-size:.85rem; }
+      .hero-arrow { width:36px; height:36px; font-size:1.4rem; opacity:.85; }
     }
+    @media(hover:none){ .hero-arrow { opacity:.85; } }
     @media(prefers-reduced-motion:reduce){ .hero-slide { transition:none; } }
 
     @media(max-width:500px){
@@ -212,13 +228,17 @@
     return a;
   }
 
+  const skeletonCards = n => Array.from({ length: n }, () =>
+    `<div class="skel-card"><div class="skel-poster"></div><div class="skel-line" style="width:80%"></div><div class="skel-line short"></div></div>`
+  ).join('');
+
   async function load(p=1, append=false) {
     if (loading) return; loading=true; lmBtn.disabled=true;
     if (!append) {
-      spinner.classList.remove('hidden');
-      gridWrap.classList.add('hidden');
+      spinner.classList.add('hidden');            // skeleton cards stand in for the ring here
+      gridWrap.classList.remove('hidden');
       lmWrap.classList.add('hidden');
-      container.innerHTML='';
+      container.innerHTML = skeletonCards(18);
     }
     try {
       const res  = await fetch(URLS[sort](p) + `&api_key=${API_KEY}`, { headers:{ accept:'application/json' } });
@@ -227,6 +247,7 @@
       page = p;
       spinner.classList.add('hidden');
       gridWrap.classList.remove('hidden');
+      if (!append) container.innerHTML = '';       // clear skeletons before real cards
       (data.results||[]).forEach(m => container.appendChild(makeCard(m)));
       pageMeta.textContent = App.t('pager.pageOf', { p: page, t: totalPages });
       pagePill.textContent = App.t('pager.pageSlash', { p: page, t: totalPages });
@@ -280,7 +301,7 @@
     try {
       const r = await fetch(`https://api.themoviedb.org/3/trending/movie/day?language=${lang()}&api_key=${API_KEY}`);
       const d = await r.json();
-      const items = (d.results || []).filter(m => m.backdrop_path).slice(0, 5);
+      const items = (d.results || []).filter(m => m.backdrop_path).slice(0, 10);
       if (!items.length) return;
       heroTrack.innerHTML = ''; heroDots.innerHTML = '';
       items.forEach((m, i) => {
@@ -313,7 +334,19 @@
         dot.addEventListener('click', () => { heroGo(i); heroStart(); });
         heroDots.appendChild(dot);
       });
-      heroSlides = [...heroTrack.children];
+      heroSlides = [...heroTrack.querySelectorAll('.hero-slide')];
+
+      // prev / next arrows (appended after the slides so they overlay them)
+      [['prev', '‹', -1], ['next', '›', 1]].forEach(([dir, glyph, step]) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = `hero-arrow hero-arrow-${dir}`;
+        b.setAttribute('aria-label', dir === 'next' ? 'Next slide' : 'Previous slide');
+        b.textContent = glyph;
+        b.addEventListener('click', () => { heroGo(heroIdx + step); heroStart(); });
+        heroTrack.appendChild(b);
+      });
+
       heroEl.classList.remove('hidden');
       heroEl.addEventListener('mouseenter', heroStop);
       heroEl.addEventListener('mouseleave', heroStart);
