@@ -28,7 +28,7 @@
     /* ───────────────────────── ENGLISH (source) ───────────────────────── */
     en: {
       'hero.playTrailer': 'Play Trailer', 'hero.viewDetails': 'View Details',
-      'nav.discover': 'Discover', 'nav.about': 'About',
+      'nav.discover': 'Discover', 'nav.about': 'About', 'nav.watchFree': 'Watch Free',
       'nav.movies': 'Movies', 'nav.series': 'TV Series', 'nav.searchPh': 'Search movies, shows, people…',
       'profile.defaultName': 'Movie Fan', 'profile.localTmdb': 'Local · TMDB',
       'profile.watchlist': 'Watchlist', 'profile.favourites': 'Favourites',
@@ -94,7 +94,7 @@
     /* ───────────────────────── FRENCH ───────────────────────── */
     fr: {
       'hero.playTrailer': "Lire la bande-annonce", 'hero.viewDetails': 'Voir les détails',
-      'nav.discover': 'Découvrir', 'nav.about': 'À propos',
+      'nav.discover': 'Découvrir', 'nav.about': 'À propos', 'nav.watchFree': 'Gratuit',
       'nav.movies': 'Films', 'nav.series': 'Séries TV', 'nav.searchPh': 'Rechercher films, séries, personnes…',
       'profile.defaultName': 'Cinéphile', 'profile.localTmdb': 'Local · TMDB',
       'profile.watchlist': 'À voir', 'profile.favourites': 'Favoris',
@@ -160,7 +160,7 @@
     /* ───────────────────────── SPANISH ───────────────────────── */
     es: {
       'hero.playTrailer': 'Ver tráiler', 'hero.viewDetails': 'Ver detalles',
-      'nav.discover': 'Descubrir', 'nav.about': 'Acerca de',
+      'nav.discover': 'Descubrir', 'nav.about': 'Acerca de', 'nav.watchFree': 'Gratis',
       'nav.movies': 'Películas', 'nav.series': 'Series TV', 'nav.searchPh': 'Buscar películas, series, personas…',
       'profile.defaultName': 'Cinéfilo', 'profile.localTmdb': 'Local · TMDB',
       'profile.watchlist': 'Por ver', 'profile.favourites': 'Favoritos',
@@ -226,7 +226,7 @@
     /* ───────────────────────── GERMAN ───────────────────────── */
     de: {
       'hero.playTrailer': 'Trailer ansehen', 'hero.viewDetails': 'Details ansehen',
-      'nav.discover': 'Entdecken', 'nav.about': 'Über',
+      'nav.discover': 'Entdecken', 'nav.about': 'Über', 'nav.watchFree': 'Gratis',
       'nav.movies': 'Filme', 'nav.series': 'Serien', 'nav.searchPh': 'Filme, Serien, Personen suchen…',
       'profile.defaultName': 'Filmfan', 'profile.localTmdb': 'Lokal · TMDB',
       'profile.watchlist': 'Merkliste', 'profile.favourites': 'Favoriten',
@@ -292,7 +292,7 @@
     /* ───────────────────────── PORTUGUESE ───────────────────────── */
     pt: {
       'hero.playTrailer': 'Ver trailer', 'hero.viewDetails': 'Ver detalhes',
-      'nav.discover': 'Descobrir', 'nav.about': 'Sobre',
+      'nav.discover': 'Descobrir', 'nav.about': 'Sobre', 'nav.watchFree': 'Grátis',
       'nav.movies': 'Filmes', 'nav.series': 'Séries', 'nav.searchPh': 'Buscar filmes, séries, pessoas…',
       'profile.defaultName': 'Cinéfilo', 'profile.localTmdb': 'Local · TMDB',
       'profile.watchlist': 'Para ver', 'profile.favourites': 'Favoritos',
@@ -358,7 +358,7 @@
     /* ───────────────────────── ITALIAN ───────────────────────── */
     it: {
       'hero.playTrailer': 'Guarda il trailer', 'hero.viewDetails': 'Vedi dettagli',
-      'nav.discover': 'Scopri', 'nav.about': 'Info',
+      'nav.discover': 'Scopri', 'nav.about': 'Info', 'nav.watchFree': 'Gratis',
       'nav.movies': 'Film', 'nav.series': 'Serie TV', 'nav.searchPh': 'Cerca film, serie, persone…',
       'profile.defaultName': 'Cinefilo', 'profile.localTmdb': 'Locale · TMDB',
       'profile.watchlist': 'Da vedere', 'profile.favourites': 'Preferiti',
@@ -424,7 +424,7 @@
     /* ───────────────────────── JAPANESE ───────────────────────── */
     ja: {
       'hero.playTrailer': '予告編を再生', 'hero.viewDetails': '詳細を見る',
-      'nav.discover': '見つける', 'nav.about': '概要',
+      'nav.discover': '見つける', 'nav.about': '概要', 'nav.watchFree': '無料視聴',
       'nav.movies': '映画', 'nav.series': 'TVドラマ', 'nav.searchPh': '映画・ドラマ・人物を検索…',
       'profile.defaultName': '映画ファン', 'profile.localTmdb': 'ローカル · TMDB',
       'profile.watchlist': 'ウォッチリスト', 'profile.favourites': 'お気に入り',
@@ -490,7 +490,7 @@
     /* ───────────────────────── KOREAN ───────────────────────── */
     ko: {
       'hero.playTrailer': '예고편 재생', 'hero.viewDetails': '상세 정보',
-      'nav.discover': '둘러보기', 'nav.about': '정보',
+      'nav.discover': '둘러보기', 'nav.about': '정보', 'nav.watchFree': '무료 감상',
       'nav.movies': '영화', 'nav.series': 'TV 시리즈', 'nav.searchPh': '영화, 시리즈, 인물 검색…',
       'profile.defaultName': '영화 팬', 'profile.localTmdb': '로컬 · TMDB',
       'profile.watchlist': '볼 목록', 'profile.favourites': '즐겨찾기',
@@ -556,7 +556,7 @@
     /* ───────────────────────── CHINESE (Simplified) ───────────────────────── */
     zh: {
       'hero.playTrailer': '播放预告片', 'hero.viewDetails': '查看详情',
-      'nav.discover': '发现', 'nav.about': '关于',
+      'nav.discover': '发现', 'nav.about': '关于', 'nav.watchFree': '免费观看',
       'nav.movies': '电影', 'nav.series': '电视剧', 'nav.searchPh': '搜索电影、剧集、人物…',
       'profile.defaultName': '影迷', 'profile.localTmdb': '本地 · TMDB',
       'profile.watchlist': '想看', 'profile.favourites': '收藏',
@@ -622,7 +622,7 @@
     /* ───────────────────────── ARABIC (RTL) ───────────────────────── */
     ar: {
       'hero.playTrailer': 'تشغيل المقطع الدعائي', 'hero.viewDetails': 'عرض التفاصيل',
-      'nav.discover': 'اكتشف', 'nav.about': 'حول',
+      'nav.discover': 'اكتشف', 'nav.about': 'حول', 'nav.watchFree': 'مشاهدة مجانية',
       'nav.movies': 'أفلام', 'nav.series': 'مسلسلات', 'nav.searchPh': 'ابحث عن أفلام ومسلسلات وأشخاص…',
       'profile.defaultName': 'محب الأفلام', 'profile.localTmdb': 'محلي · TMDB',
       'profile.watchlist': 'قائمة المشاهدة', 'profile.favourites': 'المفضلة',
@@ -688,7 +688,7 @@
     /* ───────────────────────── HINDI ───────────────────────── */
     hi: {
       'hero.playTrailer': 'ट्रेलर चलाएँ', 'hero.viewDetails': 'विवरण देखें',
-      'nav.discover': 'खोजें', 'nav.about': 'परिचय',
+      'nav.discover': 'खोजें', 'nav.about': 'परिचय', 'nav.watchFree': 'मुफ़्त देखें',
       'nav.movies': 'फ़िल्में', 'nav.series': 'टीवी सीरीज़', 'nav.searchPh': 'फ़िल्में, शो, लोग खोजें…',
       'profile.defaultName': 'मूवी फ़ैन', 'profile.localTmdb': 'लोकल · TMDB',
       'profile.watchlist': 'वॉचलिस्ट', 'profile.favourites': 'पसंदीदा',
@@ -754,7 +754,7 @@
     /* ───────────────────────── RUSSIAN ───────────────────────── */
     ru: {
       'hero.playTrailer': 'Смотреть трейлер', 'hero.viewDetails': 'Подробнее',
-      'nav.discover': 'Обзор', 'nav.about': 'О сайте',
+      'nav.discover': 'Обзор', 'nav.about': 'О сайте', 'nav.watchFree': 'Смотреть бесплатно',
       'nav.movies': 'Фильмы', 'nav.series': 'Сериалы', 'nav.searchPh': 'Поиск фильмов, сериалов, людей…',
       'profile.defaultName': 'Киноман', 'profile.localTmdb': 'Локально · TMDB',
       'profile.watchlist': 'К просмотру', 'profile.favourites': 'Избранное',
