@@ -67,6 +67,11 @@
 <body>
 <nav id="app-nav"></nav>
 
+<section class="hero hidden" id="hero" aria-label="Trending spotlight" aria-roledescription="carousel">
+  <div class="hero-track" id="hero-track"></div>
+  <div class="hero-dots" id="hero-dots"></div>
+</section>
+
 <div class="page-header">
   <div>
     <div class="page-title" id="page-title" data-i18n-html="title.trendingSeries">TRENDING <span>TV SERIES</span></div>
@@ -113,6 +118,9 @@
         pageMeta=document.getElementById('page-meta'), pageTitle=document.getElementById('page-title');
   let page=1, totalPages=1, sort='trending', loading=false;
 
+  const skeletonCards = n => Array.from({length:n}, () =>
+    '<div class="skel-card"><div class="skel-poster"></div><div class="skel-line" style="width:80%"></div><div class="skel-line short"></div></div>').join('');
+
   function makeCard(s) {
     const a = document.createElement('a');
     a.href = `details.html?seriesId=${s.id}`;
@@ -130,12 +138,13 @@
 
   async function load(p=1, append=false) {
     if (loading) return; loading=true; lmBtn.disabled=true;
-    if (!append) { spinner.classList.remove('hidden'); gridWrap.classList.add('hidden'); lmWrap.classList.add('hidden'); container.innerHTML=''; }
+    if (!append) { spinner.classList.add('hidden'); gridWrap.classList.remove('hidden'); lmWrap.classList.add('hidden'); container.innerHTML=skeletonCards(18); }
     try {
       const res=await fetch(URLS[sort](p)+`&api_key=${API_KEY}`,{headers:{accept:'application/json'}});
       const data=await res.json();
       totalPages=Math.min(data.total_pages||1,500); page=p;
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
+      if (!append) container.innerHTML='';
       (data.results||[]).forEach(s=>container.appendChild(makeCard(s)));
       pageMeta.textContent=App.t('pager.pageOf', { p: page, t: totalPages });
       pagePill.textContent=App.t('pager.pageSlash', { p: page, t: totalPages });
@@ -152,6 +161,70 @@
     sort=e.target.value; pageTitle.innerHTML=TITLES[sort]||TITLES.trending; load(1,false);
   });
   load();
+
+  // ── Hero spotlight (trending TV) ──
+  const HERO_IMG='https://image.tmdb.org/t/p/w1280';
+  const heroEl=document.getElementById('hero'), heroTrack=document.getElementById('hero-track'), heroDots=document.getElementById('hero-dots');
+  let heroSlides=[], heroIdx=0, heroTimer=null; const HERO_MS=6500;
+  function heroGo(i){
+    if(!heroSlides.length) return;
+    heroIdx=(i+heroSlides.length)%heroSlides.length;
+    heroSlides.forEach((s,n)=>s.classList.toggle('active',n===heroIdx));
+    [...heroDots.children].forEach((d,n)=>d.classList.toggle('active',n===heroIdx));
+  }
+  const heroStop =()=>{ if(heroTimer){clearInterval(heroTimer);heroTimer=null;} };
+  const heroStart=()=>{ heroStop(); if(heroSlides.length>1) heroTimer=setInterval(()=>heroGo(heroIdx+1),HERO_MS); };
+  async function playHeroTrailer(id,title){
+    try{
+      const r=await fetch(`https://api.themoviedb.org/3/tv/${id}/videos?language=en-US&api_key=${API_KEY}`);
+      const d=await r.json();
+      const v=(d.results||[]).find(x=>x.site==='YouTube'&&x.type==='Trailer')||(d.results||[]).find(x=>x.site==='YouTube');
+      App.Trailer.open({title,youtubeKey:v&&v.key});
+    }catch{ App.Trailer.open({title}); }
+  }
+  async function loadHero(){
+    try{
+      const r=await fetch(`https://api.themoviedb.org/3/trending/tv/day?language=${lang()}&api_key=${API_KEY}`);
+      const d=await r.json();
+      const items=(d.results||[]).filter(m=>m.backdrop_path).slice(0,10);
+      if(!items.length) return;
+      heroTrack.innerHTML=''; heroDots.innerHTML='';
+      items.forEach((m,i)=>{
+        const title=m.name||m.original_name||App.t('common.noTitle');
+        const slide=document.createElement('article');
+        slide.className='hero-slide'+(i===0?' active':'');
+        slide.style.backgroundImage=`url("${HERO_IMG}${m.backdrop_path}")`;
+        slide.innerHTML=`<div class="hero-shade"></div><div class="hero-content">`+
+          `<div class="hero-eyebrow">${App.t('sort.trendingToday')} · #${i+1}</div>`+
+          `<h2 class="hero-title">${title}</h2>`+
+          `<div class="hero-meta"><span class="star">★ ${m.vote_average?.toFixed(1)||'N/A'}</span><span>·</span><span>${m.first_air_date?.slice(0,4)||'—'}</span></div>`+
+          `<p class="hero-overview">${m.overview||''}</p>`+
+          `<div class="hero-actions"><button class="hero-btn hero-btn-primary" type="button">▶ ${App.t('hero.playTrailer')}</button>`+
+          `<a class="hero-btn hero-btn-ghost" href="details.html?seriesId=${m.id}">${App.t('hero.viewDetails')}</a></div></div>`;
+        slide.querySelector('.hero-btn-primary').addEventListener('click',()=>playHeroTrailer(m.id,title));
+        heroTrack.appendChild(slide);
+        const dot=document.createElement('button');
+        dot.className='hero-dot'+(i===0?' active':''); dot.type='button';
+        dot.setAttribute('aria-label',`${title}`);
+        dot.addEventListener('click',()=>{heroGo(i);heroStart();});
+        heroDots.appendChild(dot);
+      });
+      heroSlides=[...heroTrack.querySelectorAll('.hero-slide')];
+      [['prev','‹',-1],['next','›',1]].forEach(([dir,glyph,step])=>{
+        const b=document.createElement('button'); b.type='button';
+        b.className=`hero-arrow hero-arrow-${dir}`;
+        b.setAttribute('aria-label',dir==='next'?'Next slide':'Previous slide');
+        b.textContent=glyph;
+        b.addEventListener('click',()=>{heroGo(heroIdx+step);heroStart();});
+        heroTrack.appendChild(b);
+      });
+      heroEl.classList.remove('hidden');
+      heroEl.addEventListener('mouseenter',heroStop);
+      heroEl.addEventListener('mouseleave',heroStart);
+      heroStart();
+    }catch{}
+  }
+  loadHero();
 </script>
 </body>
 </html>
