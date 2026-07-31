@@ -472,8 +472,10 @@
       <a href="index.html" class="nav-logo" aria-label="MoviezDB Home">MoviezDB</a>
 
       <div class="nav-links" id="nav-links" role="navigation" aria-label="Main">
-        <a href="index.html"  class="${activePage==='movies' ?'nav-active':''}">${t('nav.movies')}</a>
-        <a href="series.html" class="${activePage==='series' ?'nav-active':''}">${t('nav.series')}</a>
+        <a href="index.html"    class="${activePage==='movies'  ?'nav-active':''}">${t('nav.movies')}</a>
+        <a href="series.html"   class="${activePage==='series'  ?'nav-active':''}">${t('nav.series')}</a>
+        <a href="discover.html" class="${activePage==='discover'?'nav-active':''}">${t('nav.discover')}</a>
+        <a href="about.html"    class="${activePage==='about'   ?'nav-active':''}">${t('nav.about')}</a>
       </div>
 
       <!-- Search -->
