@@ -65,10 +65,52 @@
 
     /* Hero styles now live in shared.css (used by index + series). */
 
+    /* ── Watch Free row (Internet Archive public-domain films) ── */
+    .free-section { max-width:1440px; margin:1.6rem auto 0; padding:0 2rem; }
+    .free-head { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:.9rem; }
+    .free-title { font-family:'Rubik Spray Paint',sans-serif; font-size:1.7rem; letter-spacing:2px; line-height:1; }
+    .free-title span { color:var(--accent); }
+    .free-sub { font-size:.8rem; color:var(--muted); margin-top:.35rem; }
+    .free-source { font-size:.75rem; color:var(--muted); text-decoration:none; white-space:nowrap; }
+    .free-source:hover { color:var(--accent); }
+    .free-row {
+      display:flex; gap:1rem; overflow-x:auto; padding:.2rem .2rem 1rem; scroll-snap-type:x proximity;
+      scrollbar-width:thin; scrollbar-color:var(--border-hi) transparent;
+    }
+    .free-row::-webkit-scrollbar { height:8px; }
+    .free-row::-webkit-scrollbar-thumb { background:var(--border-hi); border-radius:8px; }
+    .free-card {
+      flex:0 0 160px; scroll-snap-align:start; cursor:pointer;
+      background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius);
+      overflow:hidden; position:relative; transition:transform .2s, border-color .2s, box-shadow .2s;
+    }
+    .free-card:hover { transform:translateY(-5px); border-color:var(--border-hi); box-shadow:0 16px 32px rgba(0,0,0,.5); }
+    .free-thumb { width:100%; aspect-ratio:2/3; object-fit:cover; display:block; background:var(--surface2); }
+    .free-play {
+      position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(.9);
+      width:46px; height:46px; border-radius:50%;
+      background:rgba(0,0,0,.55); backdrop-filter:blur(4px); border:1.5px solid rgba(255,255,255,.4);
+      color:#fff; font-size:1.15rem; display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity .2s, transform .2s; pointer-events:none;
+    }
+    .free-card:hover .free-play { opacity:1; transform:translate(-50%,-50%) scale(1); }
+    .free-badge {
+      position:absolute; top:8px; left:8px; background:var(--accent); color:#0a0a0f;
+      font-size:.64rem; font-weight:700; letter-spacing:.4px; padding:2px 7px; border-radius:4px;
+    }
+    .free-body { padding:.6rem .65rem; }
+    .free-name { font-size:.8rem; font-weight:600; line-height:1.3; margin-bottom:2px;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+    .free-year { font-size:.72rem; color:var(--muted); }
+    .free-skel { flex:0 0 160px; }
+    .free-skel .skel-poster { border-radius:var(--radius); }
+
     @media(max-width:500px){
       .grid { grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.75rem; }
       .page-header { padding:1.5rem 1rem 1rem; }
       .grid-wrap { padding:0 1rem; }
+      .free-section { padding:0 1rem; }
+      .free-card, .free-skel { flex-basis:130px; }
     }
   </style>
 </head>
@@ -78,6 +120,17 @@
 <section class="hero hidden" id="hero" aria-label="Trending spotlight" aria-roledescription="carousel">
   <div class="hero-track" id="hero-track"></div>
   <div class="hero-dots" id="hero-dots"></div>
+</section>
+
+<section class="free-section hidden" id="free-section" aria-label="Free films to watch">
+  <div class="free-head">
+    <div>
+      <h2 class="free-title">▶ <span>Watch Free</span></h2>
+      <p class="free-sub">Full public-domain films — classics you can stream right here, legally.</p>
+    </div>
+    <a class="free-source" href="https://archive.org/details/feature_films" target="_blank" rel="noopener">via Internet Archive ↗</a>
+  </div>
+  <div class="free-row" id="free-row"></div>
 </section>
 
 <div class="page-header">
@@ -271,6 +324,68 @@
     } catch { /* hero is optional — never block the grid */ }
   }
   loadHero();
+
+  // ── Watch Free (Internet Archive public-domain feature films) ──────────
+  // archive.org's "feature_films" collection is public-domain movies with an
+  // embeddable player — real in-app playback, no piracy. We show the most-
+  // downloaded titles and open them in the same modal as trailers.
+  const freeSection = document.getElementById('free-section');
+  const freeRow     = document.getElementById('free-row');
+  const IA_IMG = id => `https://archive.org/services/img/${id}`;
+
+  function freeSkeletons(n) {
+    freeRow.innerHTML = Array.from({ length: n }, () =>
+      `<div class="free-skel"><div class="skel-poster"></div></div>`).join('');
+  }
+
+  function makeFreeCard(doc) {
+    const id    = doc.identifier;
+    const title = Array.isArray(doc.title) ? doc.title[0] : (doc.title || id);
+    const year  = doc.year || (doc.date ? String(doc.date).slice(0, 4) : '');
+    const card  = document.createElement('div');
+    card.className = 'free-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('aria-label', `${App.t('hero.playTrailer')}: ${title}`);
+    card.innerHTML = `
+      <div class="free-badge">FREE</div>
+      <img class="free-thumb" src="${IA_IMG(id)}" alt="${title}" loading="lazy"
+           onerror="this.style.visibility='hidden'">
+      <div class="free-play" aria-hidden="true">▶</div>
+      <div class="free-body">
+        <div class="free-name">${title}</div>
+        <div class="free-year">${year || '—'}</div>
+      </div>`;
+    const play = () => App.Trailer.open({ title, embedUrl: `https://archive.org/embed/${id}` });
+    card.addEventListener('click', play);
+    card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); play(); } });
+    return card;
+  }
+
+  async function loadFreeFilms() {
+    freeSection.classList.remove('hidden');
+    freeSkeletons(12);
+    try {
+      const q = 'collection:(feature_films) AND mediatype:(movies)';
+      const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(q)}`
+        + `&fl[]=identifier&fl[]=title&fl[]=year&fl[]=date&sort[]=downloads+desc&rows=48&page=1&output=json`;
+      const res  = await fetch(url);
+      const data = await res.json();
+      // Drop novelty/adult-titled items so the homepage row stays classics-forward.
+      const NSFW = /\b(sex|nudist|nude|naked|xxx|porn|erotic|adult)\b/i;
+      const docs = (data.response && data.response.docs || [])
+        .filter(d => d.identifier)
+        .filter(d => { const tt = Array.isArray(d.title) ? d.title[0] : (d.title || ''); return !NSFW.test(tt); })
+        .slice(0, 24);
+      if (!docs.length) { freeSection.classList.add('hidden'); return; }
+      freeRow.innerHTML = '';
+      docs.forEach(d => freeRow.appendChild(makeFreeCard(d)));
+    } catch {
+      // Free row is a bonus — if the Archive is unreachable, hide it silently.
+      freeSection.classList.add('hidden');
+    }
+  }
+  loadFreeFilms();
 
   load();
 </script>

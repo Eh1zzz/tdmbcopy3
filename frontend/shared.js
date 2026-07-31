@@ -419,9 +419,16 @@
   // moviebox stream-resolve flow — see "Where to watch" on the details page for
   // legitimate streaming links.)
   const Trailer = {
-    /** @param {object} opts - { title, youtubeKey } */
-    open({ title, youtubeKey } = {}) {
-      if (!youtubeKey) { Toast.show(t('toast.noTrailer'), '🎬'); return; }
+    /**
+     * @param {object} opts - { title, youtubeKey, embedUrl }
+     * Pass youtubeKey for a YouTube trailer, or embedUrl for any other
+     * embeddable player (e.g. an Internet Archive full-film player).
+     */
+    open({ title, youtubeKey, embedUrl } = {}) {
+      const src = embedUrl
+        ? embedUrl
+        : (youtubeKey ? `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&rel=0` : null);
+      if (!src) { Toast.show(t('toast.noTrailer'), '🎬'); return; }
 
       let modal = document.getElementById('trailer-modal');
       if (!modal) {
@@ -447,8 +454,7 @@
       }
 
       document.getElementById('tr-title').textContent = title || 'Trailer';
-      document.getElementById('tr-iframe').src =
-        `https://www.youtube-nocookie.com/embed/${youtubeKey}?autoplay=1&rel=0`;
+      document.getElementById('tr-iframe').src = src;
       modal.classList.add('open');
       document.body.style.overflow = 'hidden';
     },
