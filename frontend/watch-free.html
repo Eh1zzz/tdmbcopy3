@@ -126,6 +126,12 @@
       <option value="titleSorter asc">Title (A–Z)</option>
     </select>
   </div>
+  <div class="filter-field hidden" id="channel-field">
+    <label class="filter-label" for="f-channel">Channel</label>
+    <select class="filter-select" id="f-channel" aria-label="Channel">
+      <option value="">All channels</option>
+    </select>
+  </div>
   <div class="filter-field filter-grow">
     <label class="filter-label" for="f-search">Search free films</label>
     <input class="filter-search" id="f-search" type="search" placeholder="Title keyword…" autocomplete="off" aria-label="Search free films by title">
@@ -231,6 +237,7 @@
   const YT_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.YOUTUBE_KEY) || '';
   const YT_CHANNELS = ['@Popcornflix', '@CultCinemaClassics', '@FilmRiseMovies', '@PizzaFlix'];
   const fSource=document.getElementById('f-source');
+  const fChannel=document.getElementById('f-channel');
   const ytApi = (path, params) => `https://www.googleapis.com/youtube/v3/${path}?${new URLSearchParams({ ...params, key: YT_KEY })}`;
   const iso8601ToMin = d => { const m=/PT(?:(\d+)H)?(?:(\d+)M)?/.exec(d||'')||[]; return (+(m[1]||0))*60 + (+(m[2]||0)); };
   let ytItems = [];   // cached, so search filters client-side (no extra quota)
@@ -265,16 +272,29 @@
     return card;
   }
 
+  // Fill the channel picker from the channels actually present in the results,
+  // preserving the current pick if it's still available.
+  function populateChannels() {
+    const names = [...new Set(ytItems.map(v => v.channel).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    const prev = fChannel.value;
+    fChannel.innerHTML = '<option value="">All channels</option>'
+      + names.map(n => `<option value="${n}">${n}</option>`).join('');
+    fChannel.value = names.includes(prev) ? prev : '';
+  }
   function renderYt() {
     const term = fSearch.value.trim().toLowerCase();
-    const list = term ? ytItems.filter(v => v.title.toLowerCase().includes(term)) : ytItems;
+    const chan = fChannel.value;
+    let list = ytItems;
+    if (chan) list = list.filter(v => v.channel === chan);
+    if (term) list = list.filter(v => v.title.toLowerCase().includes(term));
     container.innerHTML='';
     if (!list.length) {
-      container.innerHTML = `<p class="empty-msg">${ytItems.length ? 'No free films match that search.' : 'No free films found right now. Try again later.'}</p>`;
+      container.innerHTML = `<p class="empty-msg">${ytItems.length ? 'No free films match your filters.' : 'No free films found right now. Try again later.'}</p>`;
+      pageMeta.textContent = ytItems.length ? `0 films · YouTube` : '';
       return;
     }
     list.forEach(v => container.appendChild(makeYtCard(v)));
-    pageMeta.textContent = `${list.length} free films · YouTube`;
+    pageMeta.textContent = `${list.length} free films · YouTube${chan ? ` · ${chan}` : ''}`;
   }
 
   async function loadYouTube() {
@@ -319,6 +339,7 @@
       kept.sort((a,b) => b.views - a.views);
       ytItems = kept;
       spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
+      populateChannels();
       renderYt();
     } catch {
       container.innerHTML = `<p class="empty-msg">Couldn't reach YouTube. Please try again in a moment.</p>`;
@@ -332,6 +353,7 @@
     const yt = fSource.value === 'youtube';
     document.getElementById('cat-field').classList.toggle('hidden', yt);
     document.getElementById('sort-field').classList.toggle('hidden', yt);
+    document.getElementById('channel-field').classList.toggle('hidden', !yt);
     pagePill.textContent='';
   }
   function load(p=1, append=false) {
@@ -342,6 +364,7 @@
   fSource.addEventListener('change',()=>{ applySourceUI(); load(1,false); });
   fCat.addEventListener('change',()=>load(1,false));
   fSort.addEventListener('change',()=>load(1,false));
+  fChannel.addEventListener('change',()=>renderYt());   // instant, client-side filter
   let searchDebounce;
   fSearch.addEventListener('input',()=>{
     clearTimeout(searchDebounce);
