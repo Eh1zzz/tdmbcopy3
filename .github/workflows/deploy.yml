@@ -48,13 +48,17 @@ jobs:
             DEFAULT_LANG: 'en',
             SUPABASE_URL: '${SUPABASE_URL:-https://lfemwowmirdiqiorcufn.supabase.co}',
             SUPABASE_ANON_KEY: '${SUPABASE_ANON_KEY:-sb_publishable_vCoBDV7rtjl6Ka5IHIvdTA_ryywqSgt}',
+            YOUTUBE_KEY: '${YOUTUBE_KEY}',
           };
           EOF
-          echo "Wrote config.js (TMDB_KEY length: ${#TMDB_KEY}, Supabase URL: ${SUPABASE_URL:-default})"
+          echo "Wrote config.js (TMDB_KEY length: ${#TMDB_KEY}, Supabase URL: ${SUPABASE_URL:-default}, YouTube key: ${YOUTUBE_KEY:+set})"
         env:
           TMDB_KEY: ${{ secrets.TMDB_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # Optional — set the YOUTUBE_KEY repo secret to enable the YouTube
+          # source on Watch Free. Empty = source stays disabled (IA still works).
+          YOUTUBE_KEY: ${{ secrets.YOUTUBE_KEY }}
 
       - name: Cache-bust asset URLs
         # GitHub Pages (via Fastly) caches shared.css / shared.js aggressively,
