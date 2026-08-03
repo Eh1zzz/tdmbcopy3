@@ -99,6 +99,13 @@
 
 <div class="filter-bar">
   <div class="filter-field">
+    <label class="filter-label" for="f-source">Source</label>
+    <select class="filter-select" id="f-source" aria-label="Source">
+      <option value="ia">Internet Archive</option>
+      <option value="youtube">YouTube</option>
+    </select>
+  </div>
+  <div class="filter-field" id="cat-field">
     <label class="filter-label" for="f-cat">Category</label>
     <select class="filter-select" id="f-cat" aria-label="Category">
       <option value="feature_films">All feature films</option>
@@ -110,7 +117,7 @@
       <option value="classic_tv">Classic TV</option>
     </select>
   </div>
-  <div class="filter-field">
+  <div class="filter-field" id="sort-field">
     <label class="filter-label" for="f-sort">Sort by</label>
     <select class="filter-select" id="f-sort" aria-label="Sort by">
       <option value="downloads desc">Most watched</option>
@@ -187,7 +194,7 @@
       + `&rows=${ROWS}&page=${p}&output=json`;
   }
 
-  async function load(p=1, append=false) {
+  async function loadIA(p=1, append=false) {
     if (loading) return; loading=true; lmBtn.disabled=true;
     if (!append) { spinner.classList.add('hidden'); gridWrap.classList.remove('hidden'); lmWrap.classList.add('hidden'); container.innerHTML=skeletonCards(18); }
     try {
@@ -216,12 +223,139 @@
     loading=false; lmBtn.disabled=false;
   }
 
+  // ── YouTube source (curated legit free-movie channels) ─────────────────
+  // Keyed for freshness, allowlisted for legality: a generic YouTube "full
+  // movie" search surfaces pirated re-uploads, so we only pull from channels
+  // that legitimately post free films (official free services + public-domain
+  // channels). Edit YT_CHANNELS to curate. Needs a YouTube Data API v3 key.
+  const YT_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.YOUTUBE_KEY) || '';
+  const YT_CHANNELS = ['@Popcornflix', '@CultCinemaClassics', '@TimelessClassicMovies', '@FilmRiseMovies'];
+  const fSource=document.getElementById('f-source');
+  const ytApi = (path, params) => `https://www.googleapis.com/youtube/v3/${path}?${new URLSearchParams({ ...params, key: YT_KEY })}`;
+  const iso8601ToMin = d => { const m=/PT(?:(\d+)H)?(?:(\d+)M)?/.exec(d||'')||[]; return (+(m[1]||0))*60 + (+(m[2]||0)); };
+  let ytItems = [];   // cached, so search filters client-side (no extra quota)
+  const uploadsCache = {};
+
+  async function ytUploadsPlaylist(handle) {
+    if (uploadsCache[handle] !== undefined) return uploadsCache[handle];
+    try {
+      const r = await fetch(ytApi('channels', { part:'contentDetails', forHandle:handle }));
+      const d = await r.json();
+      const up = d.items?.[0]?.contentDetails?.relatedPlaylists?.uploads || null;
+      return (uploadsCache[handle] = up);
+    } catch { return (uploadsCache[handle] = null); }
+  }
+
+  function makeYtCard(v) {
+    const title = v.title, id = v.id;
+    const card = document.createElement('div');
+    card.className='card'; card.setAttribute('role','button'); card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label', `${App.t('hero.playTrailer')}: ${title}`);
+    card.innerHTML = `
+      <div class="card-badge">FREE</div>
+      <img src="${v.thumb}" alt="${title}" loading="lazy" onerror="this.style.visibility='hidden'">
+      <div class="card-play" aria-hidden="true">▶</div>
+      <div class="card-body">
+        <div class="card-title">${title}</div>
+        <div class="card-meta">${v.channel}</div>
+      </div>`;
+    const play = () => App.Trailer.open({ title, youtubeKey:id });
+    card.addEventListener('click', play);
+    card.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); play(); } });
+    return card;
+  }
+
+  function renderYt() {
+    const term = fSearch.value.trim().toLowerCase();
+    const list = term ? ytItems.filter(v => v.title.toLowerCase().includes(term)) : ytItems;
+    container.innerHTML='';
+    if (!list.length) {
+      container.innerHTML = `<p class="empty-msg">${ytItems.length ? 'No free films match that search.' : 'No free films found right now. Try again later.'}</p>`;
+      return;
+    }
+    list.forEach(v => container.appendChild(makeYtCard(v)));
+    pageMeta.textContent = `${list.length} free films · YouTube`;
+  }
+
+  async function loadYouTube() {
+    if (loading) return; loading=true; lmBtn.disabled=true;
+    lmWrap.classList.add('hidden');
+    spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
+    container.innerHTML = skeletonCards(12);
+    if (!YT_KEY) {
+      container.innerHTML = `<p class="empty-msg">The YouTube source needs a free YouTube Data API key.<br>Add <code>YOUTUBE_KEY</code> to <code>config.js</code> to enable it — see <code>config.example.js</code>.</p>`;
+      pageMeta.textContent=''; loading=false; return;
+    }
+    try {
+      // 1) resolve each trusted channel's uploads playlist, 2) grab recent uploads
+      const playlists = (await Promise.all(YT_CHANNELS.map(ytUploadsPlaylist))).filter(Boolean);
+      const itemsById = {};
+      await Promise.all(playlists.map(async pl => {
+        try {
+          const r = await fetch(ytApi('playlistItems', { part:'snippet,contentDetails', playlistId:pl, maxResults:'15' }));
+          const d = await r.json();
+          (d.items||[]).forEach(it => {
+            const vid = it.contentDetails?.videoId; if (!vid) return;
+            const sn = it.snippet||{};
+            itemsById[vid] = { id:vid, title:sn.title||'', channel:sn.videoOwnerChannelTitle||sn.channelTitle||'',
+              thumb:(sn.thumbnails?.medium||sn.thumbnails?.default||{}).url||'' };
+          });
+        } catch {}
+      }));
+      const ids = Object.keys(itemsById);
+      // 3) keep only embeddable, feature-length (>= 40 min) videos
+      const kept = [];
+      for (let i=0; i<ids.length; i+=50) {
+        const batch = ids.slice(i, i+50);
+        const r = await fetch(ytApi('videos', { part:'contentDetails,status,statistics', id:batch.join(',') }));
+        const d = await r.json();
+        (d.items||[]).forEach(v => {
+          const mins = iso8601ToMin(v.contentDetails?.duration);
+          if (v.status?.embeddable && mins >= 40 && !NSFW.test(itemsById[v.id].title)) {
+            kept.push({ ...itemsById[v.id], views:+(v.statistics?.viewCount||0) });
+          }
+        });
+      }
+      kept.sort((a,b) => b.views - a.views);
+      ytItems = kept;
+      spinner.classList.add('hidden'); gridWrap.classList.remove('hidden');
+      renderYt();
+    } catch {
+      container.innerHTML = `<p class="empty-msg">Couldn't reach YouTube. Please try again in a moment.</p>`;
+      pageMeta.textContent='';
+    }
+    loading=false; lmBtn.disabled=false;
+  }
+
+  // ── Source dispatch + filter visibility ────────────────────────────────
+  function applySourceUI() {
+    const yt = fSource.value === 'youtube';
+    document.getElementById('cat-field').classList.toggle('hidden', yt);
+    document.getElementById('sort-field').classList.toggle('hidden', yt);
+    pagePill.textContent='';
+  }
+  function load(p=1, append=false) {
+    return fSource.value === 'youtube' ? loadYouTube() : loadIA(p, append);
+  }
+
   lmBtn.addEventListener('click',()=>load(page+1,true));
+  fSource.addEventListener('change',()=>{ applySourceUI(); load(1,false); });
   fCat.addEventListener('change',()=>load(1,false));
   fSort.addEventListener('change',()=>load(1,false));
   let searchDebounce;
-  fSearch.addEventListener('input',()=>{ clearTimeout(searchDebounce); searchDebounce=setTimeout(()=>load(1,false), 450); });
+  fSearch.addEventListener('input',()=>{
+    clearTimeout(searchDebounce);
+    // YouTube search filters the already-loaded set instantly (no quota); IA re-queries.
+    searchDebounce=setTimeout(()=> fSource.value==='youtube' ? renderYt() : loadIA(1,false), fSource.value==='youtube'?120:450);
+  });
 
+  // Disable the YouTube option (with a hint) when no key is configured.
+  if (!YT_KEY) {
+    const opt = fSource.querySelector('option[value="youtube"]');
+    opt.textContent = 'YouTube (needs API key)';
+  }
+
+  applySourceUI();
   load();
 </script>
 </body>
