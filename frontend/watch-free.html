@@ -229,7 +229,7 @@
   // that legitimately post free films (official free services + public-domain
   // channels). Edit YT_CHANNELS to curate. Needs a YouTube Data API v3 key.
   const YT_KEY = (window.MOVIEZDB_CONFIG && window.MOVIEZDB_CONFIG.YOUTUBE_KEY) || '';
-  const YT_CHANNELS = ['@Popcornflix', '@CultCinemaClassics', '@TimelessClassicMovies', '@FilmRiseMovies'];
+  const YT_CHANNELS = ['@Popcornflix', '@CultCinemaClassics', '@FilmRiseMovies', '@PizzaFlix'];
   const fSource=document.getElementById('f-source');
   const ytApi = (path, params) => `https://www.googleapis.com/youtube/v3/${path}?${new URLSearchParams({ ...params, key: YT_KEY })}`;
   const iso8601ToMin = d => { const m=/PT(?:(\d+)H)?(?:(\d+)M)?/.exec(d||'')||[]; return (+(m[1]||0))*60 + (+(m[2]||0)); };
