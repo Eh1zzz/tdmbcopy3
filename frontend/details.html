@@ -146,10 +146,22 @@
     .ep-select:focus { border-color:var(--accent); }
 
     /* ── Where to watch (providers) ── */
+    .wtw-head  { display:flex; align-items:center; gap:.75rem; flex-wrap:wrap; margin-bottom:1rem; }
+    .wtw-region {
+      background:var(--surface2); border:1.5px solid var(--border); color:var(--text);
+      padding:5px 26px 5px 10px; border-radius:8px; font-family:'Shantell Sans',sans-serif;
+      font-size:.76rem; outline:none; cursor:pointer; appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237a7a8c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 8px center; transition:border-color .2s;
+    }
+    .wtw-region:focus { border-color:var(--accent); }
     .wtw-row   { display:flex; align-items:center; gap:1rem; margin-bottom:.9rem; flex-wrap:wrap; }
-    .wtw-label { font-size:.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); width:58px; flex-shrink:0; }
+    .wtw-label { font-size:.72rem; text-transform:uppercase; letter-spacing:1px; color:var(--muted); width:74px; flex-shrink:0; }
+    .wtw-row.wtw-free .wtw-label { color:var(--accent); }
+    .wtw-free-tag { display:inline-block; background:var(--accent); color:#0a0a0f; font-size:.54rem; font-weight:700; letter-spacing:.4px; padding:1px 4px; border-radius:3px; margin-left:5px; vertical-align:middle; }
     .wtw-logos { display:flex; gap:.55rem; flex-wrap:wrap; }
     .wtw-prov img { width:46px; height:46px; border-radius:10px; border:1px solid var(--border); transition:transform .2s, border-color .2s; }
+    .wtw-row.wtw-free .wtw-prov img { border-color:rgba(232,184,75,.5); }
     .wtw-prov:hover img { transform:translateY(-2px); border-color:var(--accent); }
     .wtw-note  { font-size:.72rem; color:var(--muted); margin-top:.4rem; }
     .wtw-note a { color:var(--accent); }
@@ -274,31 +286,48 @@
       return d.results || {};
     } catch { return {}; }
   }
-  function pickRegion(results) {
-    const loc = (navigator.language || 'en-US').split('-')[1] || 'US';
-    if (results[loc]) return loc;
-    if (results.US)   return 'US';
-    return Object.keys(results)[0] || null;
+  const hasProviders = d => d && (d.free || d.ads || d.flatrate || d.rent || d.buy);
+  function regionName(code) {
+    try { return new Intl.DisplayNames([(lang || 'en').split('-')[0]], { type:'region' }).of(code) || code; }
+    catch { return code; }
   }
-  function providersSection(results) {
-    const region = pickRegion(results || {});
-    if (!region || !results[region]) return '';
-    const data = results[region];
+  // Rows for one region — free & ad-supported first (on brand with Watch Free),
+  // then subscription / rent / buy. TMDB gives one JustWatch link per region
+  // (no per-provider deep links or prices), so every logo routes there.
+  function providerRowsHtml(results, region) {
+    const data = results[region]; if (!data) return '';
     const link = data.link || '';
-    const groups = [['flatrate',App.t('details.stream')], ['rent',App.t('details.rent')], ['buy',App.t('details.buy')]];
+    const groups = [
+      ['free', App.t('details.free'),    true],
+      ['ads',  App.t('details.freeAds'), true],
+      ['flatrate', App.t('details.stream'), false],
+      ['rent', App.t('details.rent'),    false],
+      ['buy',  App.t('details.buy'),     false],
+    ];
     let rows = '';
-    groups.forEach(([key, label]) => {
+    groups.forEach(([key, label, isFree]) => {
       const list = data[key];
       if (!list || !list.length) return;
-      rows += `<div class="wtw-row"><span class="wtw-label">${label}</span><div class="wtw-logos">${
+      rows += `<div class="wtw-row${isFree?' wtw-free':''}"><span class="wtw-label">${label}${isFree?'<span class="wtw-free-tag">FREE</span>':''}</span><div class="wtw-logos">${
         list.map(p => `<a href="${link}" target="_blank" rel="noopener" class="wtw-prov" title="${p.provider_name}"><img src="https://image.tmdb.org/t/p/w92${p.logo_path}" alt="${p.provider_name}" loading="lazy"></a>`).join('')
       }</div></div>`;
     });
-    if (!rows) return '';
+    return rows + `<div class="wtw-note">${App.t('details.availability')}${link ? ` · <a href="${link}" target="_blank" rel="noopener">${App.t('details.moreOptions')}</a>` : ''} · ${App.t('details.dataByJustWatch')}</div>`;
+  }
+  function providersSection(results) {
+    results = results || {};
+    const regions = Object.keys(results).filter(r => hasProviders(results[r]));
+    if (!regions.length) return '';
+    const loc = (navigator.language || 'en-US').split('-')[1] || 'US';
+    const region = regions.includes(loc) ? loc : (regions.includes('US') ? 'US' : regions[0]);
+    regions.sort((a, b) => regionName(a).localeCompare(regionName(b)));
+    const options = regions.map(r => `<option value="${r}" ${r===region?'selected':''}>${regionName(r)}</option>`).join('');
     return `<div class="section wtw-section">
-      <div class="section-title">${App.t('details.whereToWatch')} <span class="section-count">${region}</span></div>
-      ${rows}
-      <div class="wtw-note">${App.t('details.availability')}${link ? ` · <a href="${link}" target="_blank" rel="noopener">${App.t('details.moreOptions')}</a>` : ''} · ${App.t('details.dataByJustWatch')}</div>
+      <div class="wtw-head">
+        <div class="section-title" style="margin:0">${App.t('details.whereToWatch')}</div>
+        <select class="wtw-region" id="wtw-region" aria-label="${App.t('details.region')}">${options}</select>
+      </div>
+      <div id="wtw-rows">${providerRowsHtml(results, region)}</div>
     </div>`;
   }
 
@@ -473,6 +502,12 @@
       document.getElementById('watch-btn')?.addEventListener('click', () =>
         App.Trailer.open({ title, youtubeKey: trailerKey })
       );
+
+      // Where-to-watch region switcher — re-render rows for the chosen country
+      const wtwRegion = document.getElementById('wtw-region');
+      wtwRegion?.addEventListener('change', () => {
+        document.getElementById('wtw-rows').innerHTML = providerRowsHtml(providers, wtwRegion.value);
+      });
 
       // Poster action buttons
       const itemMeta = { id:itemId, type:itemType, title, poster };
